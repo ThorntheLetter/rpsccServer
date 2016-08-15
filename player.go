@@ -124,7 +124,7 @@ func Winner(p1op opponent, p1option string, p2op opponent, p2option string) {
 		}
 	case "5\n":
 		switch p2option {
-		case "2\n", "4 \n":
+		case "2\n", "4\n":
 			p1op.scorevs += 1
 			return
 		case "1\n", "3\n":
