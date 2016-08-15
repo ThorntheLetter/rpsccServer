@@ -70,9 +70,7 @@ func (p1 *player) Challenge(p2 player) {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-
 		Winner(p1op, p1in, p2op, p2in)
-
 		_, err = p1.connection.Write([]byte(p2in))
 		if err != nil {
 			fmt.Println(err.Error())

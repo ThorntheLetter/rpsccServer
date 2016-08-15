@@ -15,7 +15,6 @@ func main() {
 	defer ln.Close()
 
 	var playerList []player
-
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
