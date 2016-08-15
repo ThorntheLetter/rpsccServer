@@ -3,22 +3,18 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"math/rand"
 	"net"
-	"time"
 )
 
 var DisconnectChannel = make(chan *player, 5)
 
 type opponent struct {
 	scorevs int
-	played  bool
 	p       *player
 }
 
 type player struct {
 	name       string
-	busy       bool
 	connection net.Conn
 	reader     *bufio.Reader
 	opponents  []opponent
@@ -27,13 +23,11 @@ type player struct {
 func NewOpponent(p player) *opponent {
 	o := new(opponent)
 	o.p = &p
-	o.played = false
 	return o
 }
 
-func NewPlayer(c net.Conn, opponent []player) *player {
+func NewPlayer(c net.Conn) *player {
 	p := new(player)
-	p.busy = true
 	p.connection = c
 	p.reader = bufio.NewReader(c)
 	var err error
@@ -42,77 +36,27 @@ func NewPlayer(c net.Conn, opponent []player) *player {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	for _, o := range opponent {
-		p.AddOpponent(o)
-	}
 	return p
 }
 
 func (p *player) Score() int {
 	sum := 0
-	for _, o := range p.opponents { // this range shold actually work like that
+	for _, o := range p.opponents { // this range should actually work like that
 		sum = sum + o.scorevs
 	}
 	return sum
 }
 
-func (p *player) AddOpponent(newOpp player) {
+func (p *player) AddOpponent(newOpp player) opponent {
 	o := NewOpponent(newOpp)
 	p.opponents = append(p.opponents, *o)
+	return *o
 }
 
-func (p *player) PlayLoop() {
-	source := rand.NewSource(time.Now().UnixNano())
-	randoms := rand.New(source)
-	var start time.Time
-	var dur time.Duration
-	for {
-		start = time.Now()
-		p.SearchMatch()
-		dur = time.Since(start)
-		time.Sleep(dur + time.Second + time.Second*time.Duration(randoms.Int63n(2))) //sleep for 0-3 times as long as it took so it can be challenged
-		//fmt.Printf("%s: %t\n", p.name, p.busy)
-	}
-}
-
-func (p *player) SearchMatch() {
-	p.busy = true
-	names := ""
-	for _, s := range p.opponents {
-		names = names + " " + s.p.name
-	}
-	for i, _ := range p.opponents {
-		fmt.Printf(p.name + " : " + names + " | " + p.opponents[i].p.name)
-		if !p.opponents[i].played {
-			fmt.Printf(" is not played")
-			if p.opponents[i].p.busy {
-				fmt.Printf(", not busy")
-				p.Challenge(p.opponents[i])
-				p.opponents[i].played = true
-				break
-			}
-		}
-		fmt.Println()
-	}
-	p.busy = false
-}
-
-func (p1 *player) Challenge(p1op opponent) {
-	fmt.Println(p1.name + " vs " + p1op.p.name)
-	p2 := p1op.p
-	p2.busy = true
-
-	var p2op opponent
-
-	for i, _ := range p2.opponents {
-		if p2.opponents[i].p == p1 {
-			p2op = p2.opponents[i]
-			break
-		}
-	}
-
-	p1op.played = true
-	p2op.played = true
+func (p1 *player) Challenge(p2 player) {
+	fmt.Println(p1.name + " vs " + p2.name)
+	p1op := p1.AddOpponent(p2)
+	p2op := p2.AddOpponent(*p1)
 
 	p1.connection.Write([]byte("6\n"))
 	p2.connection.Write([]byte("6\n"))
@@ -138,7 +82,6 @@ func (p1 *player) Challenge(p1op opponent) {
 			fmt.Println(err.Error())
 		}
 	}
-	p2.busy = false
 }
 
 func Winner(p1op opponent, p1option string, p2op opponent, p2option string) {
