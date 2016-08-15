@@ -22,13 +22,13 @@ func main() {
 			fmt.Println(err.Error())
 		}
 
-		newP := NewPlayer(conn, playerList)
+		newP := NewPlayer(conn)
 		fmt.Println("connection accepted: " + newP.name)
 		for i, _ := range playerList {
-			playerList[i].AddOpponent(*newP)
+			newP.Challenge(playerList[i])
 		}
 		playerList = append(playerList, *newP)
-		go newP.PlayLoop()
+		// go newP.PlayLoop()
 
 	}
 }
