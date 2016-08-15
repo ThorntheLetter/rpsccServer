@@ -133,6 +133,5 @@ func Winner(p1op opponent, p1option string, p2op opponent, p2option string) {
 			p2op.scorevs += 1
 			return
 		}
-
 	}
 }
