@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-var DisconnectChannel = make(chan *player, 5)
+var DisconnectSlice = []*player{}
 
 type opponent struct {
 	scorevs int
@@ -17,12 +17,12 @@ type player struct {
 	name       string
 	connection net.Conn
 	reader     *bufio.Reader
-	opponents  []opponent
+	opponents  []*opponent
 }
 
-func NewOpponent(p player) *opponent {
+func NewOpponent(p *player) *opponent {
 	o := new(opponent)
-	o.p = &p
+	o.p = p
 	return o
 }
 
@@ -41,27 +41,27 @@ func NewPlayer(c net.Conn) *player {
 
 func (p *player) Score() int {
 	sum := 0
-	for _, o := range p.opponents { // this range should actually work like that
-		sum = sum + o.scorevs
+	for i, _ := range p.opponents {
+		sum += p.opponents[i].scorevs
 	}
 	return sum
 }
 
-func (p *player) AddOpponent(newOpp player) opponent {
+func (p *player) AddOpponent(newOpp *player) *opponent {
 	o := NewOpponent(newOpp)
-	p.opponents = append(p.opponents, *o)
-	return *o
+	p.opponents = append(p.opponents, o)
+	return o
 }
 
-func (p1 *player) Challenge(p2 player) {
+func (p1 *player) Challenge(p2 *player) {
 	fmt.Println(p1.name + " vs " + p2.name)
 	p1op := p1.AddOpponent(p2)
-	p2op := p2.AddOpponent(*p1)
+	p2op := p2.AddOpponent(p1)
 
 	p1.connection.Write([]byte("6\n"))
 	p2.connection.Write([]byte("6\n"))
 
-	for i := 0; i < 99; i += 1 {
+	for i := 0; i < 100; i += 1 {
 		p1in, err := p1.reader.ReadString('\n')
 		if err != nil {
 			fmt.Println(err.Error())
@@ -70,7 +70,9 @@ func (p1 *player) Challenge(p2 player) {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+
 		Winner(p1op, p1in, p2op, p2in)
+
 		_, err = p1.connection.Write([]byte(p2in))
 		if err != nil {
 			fmt.Println(err.Error())
@@ -79,10 +81,11 @@ func (p1 *player) Challenge(p2 player) {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+
 	}
 }
 
-func Winner(p1op opponent, p1option string, p2op opponent, p2option string) {
+func Winner(p1op *opponent, p1option string, p2op *opponent, p2option string) {
 	switch p1option {
 	case p2option:
 		return
@@ -98,6 +101,7 @@ func Winner(p1op opponent, p1option string, p2op opponent, p2option string) {
 	case "2\n":
 		switch p2option {
 		case "1\n":
+
 			p1op.scorevs += 1
 			return
 		case "3\n", "4\n", "5\n":
