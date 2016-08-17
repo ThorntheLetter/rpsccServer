@@ -137,3 +137,17 @@ func Winner(p1op *opponent, p1option string, p2op *opponent, p2option string) {
 		}
 	}
 }
+
+type sortablePlayerSlice []player
+
+func (l sortablePlayerSlice) Len() int {
+	return len(l)
+}
+
+func (l sortablePlayerSlice) Swap(i int, j int) {
+	l[i], l[j] = l[j], l[i]
+}
+
+func (l sortablePlayerSlice) Less(i int, j int) bool {
+	return l[i].Score() > l[j].Score() // actually greater than so it sorts descending
+}
