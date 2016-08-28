@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-var DisconnectSlice = []*player{}
+var DisconnectSlice = []int{}
 
 type opponent struct {
 	scorevs int
@@ -17,6 +17,7 @@ type player struct {
 	name       string
 	connection net.Conn
 	reader     *bufio.Reader
+	id         int
 	opponents  []*opponent
 }
 
@@ -26,10 +27,11 @@ func NewOpponent(p *player) *opponent {
 	return o
 }
 
-func NewPlayer(c net.Conn) *player {
+func NewPlayer(c net.Conn, id int) *player {
 	p := new(player)
 	p.connection = c
 	p.reader = bufio.NewReader(c)
+	p.id = id
 	var err error
 	p.name, err = p.reader.ReadString('\n')
 	p.name = p.name[:len(p.name)-1]
@@ -54,6 +56,7 @@ func (p *player) AddOpponent(newOpp *player) *opponent {
 }
 
 func (p1 *player) Challenge(p2 *player) {
+	disc := false
 	fmt.Println(p1.name + " vs " + p2.name)
 	p1op := p1.AddOpponent(p2)
 	p2op := p2.AddOpponent(p1)
@@ -64,76 +67,96 @@ func (p1 *player) Challenge(p2 *player) {
 	for i := 0; i < 100; i += 1 {
 		p1in, err := p1.reader.ReadString('\n')
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println(p1.name, "disconnected")
+			DisconnectSlice = append(DisconnectSlice, p1.id)
+			disc = true
+			p1in = "0\n"
+
 		}
 		p2in, err := p2.reader.ReadString('\n')
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println(p2.name, "disconnected")
+			DisconnectSlice = append(DisconnectSlice, p2.id)
+			disc = true
+			p2in = "0\n"
 		}
 
-		Winner(p1op, p1in, p2op, p2in)
-
-		_, err = p1.connection.Write([]byte(p2in))
-		if err != nil {
-			fmt.Println(err.Error())
+		if !disc {
+			Winner(p1op, p1in, p2op, p2in)
 		}
-		_, err = p2.connection.Write([]byte(p1in))
-		if err != nil {
-			fmt.Println(err.Error())
+
+		p1.connection.Write([]byte(p2in)) // any errors here should also get caught and dealt with above,
+		p2.connection.Write([]byte(p1in))
+
+		if disc {
+			break
 		}
 
 	}
 }
 
+func disconnect(pList []player, disconnected int) []player {
+	for i, _ := range pList {
+		for j, _ := range pList[i].opponents {
+			if pList[i].opponents[j].p.id == disconnected {
+				pList[i].opponents = append(pList[i].opponents[:j], pList[i].opponents[j+1:]...) // remove disconnected player from list of opponents
+				break
+			}
+		}
+	}
+	for i, _ := range pList {
+
+		if pList[i].id == disconnected {
+			pList = append(pList[:i], pList[i+1:]...) // remove disconnected player so it doesnt screw with loop
+			break
+		}
+	}
+
+	return pList
+}
+
 func Winner(p1op *opponent, p1option string, p2op *opponent, p2option string) {
 	switch p1option {
 	case p2option:
-		return
+
 	case "1\n":
 		switch p2option {
 		case "3\n", "4\n", "5\n":
 			p1op.scorevs += 1
-			return
 		case "2\n":
 			p2op.scorevs += 1
-			return
 		}
+
 	case "2\n":
 		switch p2option {
 		case "1\n":
-
 			p1op.scorevs += 1
-			return
 		case "3\n", "4\n", "5\n":
 			p2op.scorevs += 1
-			return
 		}
+
 	case "3\n":
 		switch p2option {
 		case "2\n", "5\n":
 			p1op.scorevs += 1
-			return
 		case "1\n", "4\n":
 			p2op.scorevs += 1
-			return
 		}
+
 	case "4\n":
 		switch p2option {
 		case "2\n", "3\n":
 			p1op.scorevs += 1
-			return
 		case "1\n", "5\n":
 			p2op.scorevs += 1
-			return
 		}
+
 	case "5\n":
 		switch p2option {
 		case "2\n", "4\n":
 			p1op.scorevs += 1
-			return
 		case "1\n", "3\n":
 			p2op.scorevs += 1
-			return
 		}
 	}
 }

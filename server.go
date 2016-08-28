@@ -24,18 +24,24 @@ func main() {
 	http.HandleFunc("/", root)
 	go http.ListenAndServe(webPort, nil)
 
+	id := 0
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 
-		newP := NewPlayer(conn)
+		newP := NewPlayer(conn, id)
 		fmt.Println("connection accepted: " + newP.name)
+		id += 1
 		for i, _ := range playerList {
 			newP.Challenge(&playerList[i])
 		}
 		playerList = append(playerList, *newP)
 
+		for d, _ := range DisconnectSlice {
+			playerList = disconnect(playerList, DisconnectSlice[d])
+		}
+		DisconnectSlice = []int{}
 	}
 }
