@@ -23,6 +23,7 @@ func main() {
 	// website setup
 	http.HandleFunc("/", root)
 	go http.ListenAndServe(webPort, nil)
+	go cody()
 
 	id := 0
 	for {
