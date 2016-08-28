@@ -56,7 +56,7 @@ func (p *player) AddOpponent(newOpp *player) *opponent {
 }
 
 func (p1 *player) Challenge(p2 *player) {
-	disc := false
+	stop := false
 	fmt.Println(p1.name + " vs " + p2.name)
 	p1op := p1.AddOpponent(p2)
 	p2op := p2.AddOpponent(p1)
@@ -69,7 +69,7 @@ func (p1 *player) Challenge(p2 *player) {
 		if err != nil {
 			fmt.Println(p1.name, "disconnected")
 			DisconnectSlice = append(DisconnectSlice, p1.id)
-			disc = true
+			stop = true
 			p1in = "0\n"
 
 		}
@@ -77,22 +77,110 @@ func (p1 *player) Challenge(p2 *player) {
 		if err != nil {
 			fmt.Println(p2.name, "disconnected")
 			DisconnectSlice = append(DisconnectSlice, p2.id)
-			disc = true
+			stop = true
 			p2in = "0\n"
 		}
 
-		if !disc {
-			Winner(p1op, p1in, p2op, p2in)
+		if !stop {
+			stop = Winner(p1op, &p1in, p2op, &p2in)
 		}
 
 		p1.connection.Write([]byte(p2in)) // any errors here should also get caught and dealt with above,
 		p2.connection.Write([]byte(p1in))
 
-		if disc {
+		if stop {
 			break
 		}
 
 	}
+}
+
+func Winner(p1op *opponent, p1option *string, p2op *opponent, p2option *string) bool {
+	switch *p1option {
+	case "1\n":
+		switch *p2option {
+		case "1\n":
+		case "3\n", "4\n", "5\n":
+			p1op.scorevs += 1
+		case "2\n":
+			p2op.scorevs += 1
+		default:
+			*p2option = "0\n"
+			p1op.scorevs = 100
+			p2op.scorevs = 0
+			return true
+		}
+
+	case "2\n":
+		switch *p2option {
+		case "2\n":
+		case "1\n":
+			p1op.scorevs += 1
+		case "3\n", "4\n", "5\n":
+			p2op.scorevs += 1
+		default:
+			*p2option = "0\n"
+			p1op.scorevs = 100
+			p2op.scorevs = 0
+			return true
+		}
+
+	case "3\n":
+		switch *p2option {
+		case "3\n":
+		case "2\n", "5\n":
+			p1op.scorevs += 1
+		case "1\n", "4\n":
+			p2op.scorevs += 1
+		default:
+			*p2option = "0\n"
+			p1op.scorevs = 100
+			p2op.scorevs = 0
+			return true
+		}
+
+	case "4\n":
+		switch *p2option {
+		case "4\n":
+		case "2\n", "3\n":
+			p1op.scorevs += 1
+		case "1\n", "5\n":
+			p2op.scorevs += 1
+		default:
+			*p2option = "0\n"
+			p1op.scorevs = 100
+			p2op.scorevs = 0
+			return true
+		}
+
+	case "5\n":
+		switch *p2option {
+		case "5\n":
+		case "2\n", "4\n":
+			p1op.scorevs += 1
+		case "1\n", "3\n":
+			p2op.scorevs += 1
+		default:
+			*p2option = "0\n"
+			p1op.scorevs = 100
+			p2op.scorevs = 0
+			return true
+		}
+	default:
+		*p1option = "0\n"
+		p1op.scorevs = 0
+
+		switch *p2option {
+		case "1\n", "2\n", "3\n", "4\n", "5\n":
+			p2op.scorevs = 100
+		default:
+			*p2option = "0\n"
+			p2op.scorevs = 0
+		}
+
+		return true
+	}
+	return false
 }
 
 func disconnect(pList []player, disconnected int) []player {
@@ -113,52 +201,6 @@ func disconnect(pList []player, disconnected int) []player {
 	}
 
 	return pList
-}
-
-func Winner(p1op *opponent, p1option string, p2op *opponent, p2option string) {
-	switch p1option {
-	case p2option:
-
-	case "1\n":
-		switch p2option {
-		case "3\n", "4\n", "5\n":
-			p1op.scorevs += 1
-		case "2\n":
-			p2op.scorevs += 1
-		}
-
-	case "2\n":
-		switch p2option {
-		case "1\n":
-			p1op.scorevs += 1
-		case "3\n", "4\n", "5\n":
-			p2op.scorevs += 1
-		}
-
-	case "3\n":
-		switch p2option {
-		case "2\n", "5\n":
-			p1op.scorevs += 1
-		case "1\n", "4\n":
-			p2op.scorevs += 1
-		}
-
-	case "4\n":
-		switch p2option {
-		case "2\n", "3\n":
-			p1op.scorevs += 1
-		case "1\n", "5\n":
-			p2op.scorevs += 1
-		}
-
-	case "5\n":
-		switch p2option {
-		case "2\n", "4\n":
-			p1op.scorevs += 1
-		case "1\n", "3\n":
-			p2op.scorevs += 1
-		}
-	}
 }
 
 type sortablePlayerSlice []player
