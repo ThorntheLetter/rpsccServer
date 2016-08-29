@@ -3,7 +3,7 @@ provider "aws" {}
 resource "aws_instance" "rpscc-host" {
     ami                         = "ami-dbc380bb"
     availability_zone           = "us-west-1c"
-    instance_type               = "t2.small"
+    instance_type               = "t2.micro"
     associate_public_ip_address = true
     disable_api_termination     = false
     ebs_optimized               = false
