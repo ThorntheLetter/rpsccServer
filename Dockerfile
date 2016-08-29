@@ -1,0 +1,5 @@
+FROM golang:1.6-onbuild
+
+EXPOSE 7633
+EXPOSE 7655
+EXPOSE 3489
