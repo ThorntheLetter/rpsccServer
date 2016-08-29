@@ -9,7 +9,7 @@ import (
 
 func root(w http.ResponseWriter, r *http.Request) {
 	webPlayers := make(sortablePlayerSlice, len(playerList))
-	fmt.Println(copy(webPlayers, playerList)) // copy so sorting doesnt effect the playing
+	copy(webPlayers, playerList) // copy so sorting doesnt effect the playing
 	sort.Sort(sortablePlayerSlice(webPlayers))
 
 	w.Write([]byte("<table>"))
